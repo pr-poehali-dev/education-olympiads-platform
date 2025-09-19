@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
+import OlympiadQuiz from '@/components/OlympiadQuiz';
 
 const subjects = [
   { id: 'math', name: 'Математика', icon: 'Calculator' },
@@ -50,6 +51,9 @@ const Index = () => {
     teacherName: '',
     teacherEmail: ''
   });
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [currentQuizSubject, setCurrentQuizSubject] = useState('');
+  const [currentQuizGrade, setCurrentQuizGrade] = useState('');
 
   const handleLogin = () => {
     setCurrentUser({
@@ -78,6 +82,28 @@ const Index = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
     setActiveTab('home');
+  };
+
+  const startOlympiad = (subjectId: string, gradeName: string) => {
+    setCurrentQuizSubject(subjectId);
+    setCurrentQuizGrade(gradeName);
+    setShowQuiz(true);
+  };
+
+  const handleQuizComplete = (score: number, totalQuestions: number) => {
+    const newResult = {
+      subject: subjects.find(s => s.id === currentQuizSubject)?.name || currentQuizSubject,
+      score: score,
+      place: Math.floor(Math.random() * 10) + 1,
+      certificate: score >= 45 ? 'Диплом I степени' : score >= 35 ? 'Диплом II степени' : 'Диплом участника'
+    };
+    
+    setCurrentUser({
+      ...currentUser,
+      results: [...(currentUser?.results || []), newResult]
+    });
+    
+    setShowQuiz(false);
   };
 
   if (!isLoggedIn) {
@@ -517,13 +543,20 @@ const Index = () => {
                     <CardContent>
                       <div className="grid grid-cols-3 gap-2 mb-4">
                         {subjects.slice(0, 6).map((subject) => (
-                          <div key={subject.id} className="flex flex-col items-center p-2 rounded-lg bg-gray-50 hover:bg-primary/10 transition-colors cursor-pointer">
+                          <div 
+                            key={subject.id} 
+                            className="flex flex-col items-center p-2 rounded-lg bg-gray-50 hover:bg-primary/10 transition-colors cursor-pointer"
+                            onClick={() => startOlympiad(subject.id, grade.name)}
+                          >
                             <Icon name={subject.icon as any} size={20} className="text-primary mb-1" />
                             <span className="text-xs text-center">{subject.name}</span>
                           </div>
                         ))}
                       </div>
-                      <Button className="w-full">
+                      <Button 
+                        className="w-full"
+                        onClick={() => startOlympiad('math', grade.name)}
+                      >
                         Участвовать
                       </Button>
                     </CardContent>
@@ -659,6 +692,18 @@ const Index = () => {
           </Tabs>
         </div>
       </div>
+
+      {/* Компонент олимпиады */}
+      {showQuiz && (
+        <div className="fixed inset-0 bg-white z-50 overflow-auto">
+          <OlympiadQuiz
+            subject={currentQuizSubject}
+            grade={currentQuizGrade}
+            onComplete={handleQuizComplete}
+            onClose={() => setShowQuiz(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };
